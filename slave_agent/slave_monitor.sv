@@ -65,11 +65,6 @@ class slave_monitor extends uvm_monitor;
 
         slave_transaction tr;
 
-        bit        have_prev;
-        bit [31:0] prev_addr;
-        bit [1:0]  prev_trans;
-        bit        prev_write;
-
         forever begin
 
             @(vif.slave_monitor_cb);
@@ -83,70 +78,85 @@ class slave_monitor extends uvm_monitor;
 
             //---------------------------------------------
             // BUSY cycles are asserted for exactly one
-            // clock edge (no wait-state hold), so capture
-            // them immediately.
+            // clock edge by the driver (no wait-state hold),
+            // so capture them immediately.
             //---------------------------------------------
 
             if(vif.slave_monitor_cb.HTRANS == 2'b01) begin
-                have_prev = 1'b0;  // next NONSEQ/SEQ is a fresh beat
+
+                tr = slave_transaction::type_id::create("tr");
+
+                tr.HADDR    = vif.slave_monitor_cb.HADDR;
+                tr.HWRITE   = vif.slave_monitor_cb.HWRITE;
+                tr.HTRANS   = vif.slave_monitor_cb.HTRANS;
+                tr.HSIZE    = vif.slave_monitor_cb.HSIZE;
+                tr.HBURST   = vif.slave_monitor_cb.HBURST;
+                tr.HLENGTH  = vif.slave_monitor_cb.HLENGTH;
+                tr.HWDATA   = vif.slave_monitor_cb.HWDATA;
+                tr.HRDATA   = vif.slave_monitor_cb.HRDATA;
+                tr.HREADY   = vif.slave_monitor_cb.HREADY;
+                tr.HRESP    = vif.slave_monitor_cb.HRESP;
+
+                analysis_port.write(tr);
+
+                `uvm_info(get_type_name(),
+                          $sformatf("SLAVE MONITOR\n%s",
+                          tr.convert2string()),
+                          UVM_MEDIUM)
+
+                continue;
+
             end
-            else begin
 
-                //-----------------------------------------
-                // NONSEQ/SEQ: only capture once the transfer
-                // actually completes (HREADY = 1), and skip
-                // if it's the same beat already captured.
-                //-----------------------------------------
+            //---------------------------------------------
+            // NONSEQ/SEQ: this edge is the address phase.
+            // Latch the address-phase fields now, then
+            // mirror the driver's own timing - it always
+            // takes one further, unconditional clock edge
+            // (the data phase) before HWDATA/HRESP/HREADY
+            // are valid for this beat. Advance one edge
+            // first, THEN poll HREADY for any wait states,
+            // and only capture once the transfer completes.
+            //---------------------------------------------
 
-                if(vif.slave_monitor_cb.HREADY !== 1'b1)
-                    continue;
+            begin
 
-                if(have_prev &&
-                   vif.slave_monitor_cb.HADDR  == prev_addr  &&
-                   vif.slave_monitor_cb.HTRANS == prev_trans &&
-                   vif.slave_monitor_cb.HWRITE == prev_write)
-                    continue;
+                bit [31:0] addr_l   = vif.slave_monitor_cb.HADDR;
+                bit        write_l  = vif.slave_monitor_cb.HWRITE;
+                bit [1:0]  trans_l  = vif.slave_monitor_cb.HTRANS;
+                bit [2:0]  size_l   = vif.slave_monitor_cb.HSIZE;
+                bit [2:0]  burst_l  = vif.slave_monitor_cb.HBURST;
+                bit [4:0]  length_l = vif.slave_monitor_cb.HLENGTH;
 
-                prev_addr  = vif.slave_monitor_cb.HADDR;
-                prev_trans = vif.slave_monitor_cb.HTRANS;
-                prev_write = vif.slave_monitor_cb.HWRITE;
-                have_prev  = 1'b1;
+                // Mandatory data-phase edge (mirrors the driver)
+                @(vif.slave_monitor_cb);
+
+                // Wait out any additional slave wait states
+                while(vif.slave_monitor_cb.HREADY !== 1'b1)
+                    @(vif.slave_monitor_cb);
+
+                tr = slave_transaction::type_id::create("tr");
+
+                tr.HADDR    = addr_l;
+                tr.HWRITE   = write_l;
+                tr.HTRANS   = trans_l;
+                tr.HSIZE    = size_l;
+                tr.HBURST   = burst_l;
+                tr.HLENGTH  = length_l;
+
+                tr.HWDATA   = vif.slave_monitor_cb.HWDATA;
+                tr.HRDATA   = vif.slave_monitor_cb.HRDATA;
+                tr.HREADY   = vif.slave_monitor_cb.HREADY;
+                tr.HRESP    = vif.slave_monitor_cb.HRESP;
+
+                analysis_port.write(tr);
+
+                `uvm_info(get_type_name(),
+                          $sformatf("SLAVE MONITOR\n%s",
+                          tr.convert2string()),
+                          UVM_MEDIUM)
 
             end
-
-            //---------------------------------------------
-            // Capture Transaction
-            //---------------------------------------------
-
-            tr = slave_transaction::type_id::create("tr");
-
-            tr.HADDR    = vif.slave_monitor_cb.HADDR;
-            tr.HWRITE   = vif.slave_monitor_cb.HWRITE;
-            tr.HTRANS   = vif.slave_monitor_cb.HTRANS;
-            tr.HSIZE    = vif.slave_monitor_cb.HSIZE;
-            tr.HBURST   = vif.slave_monitor_cb.HBURST;
-            tr.HLENGTH  = vif.slave_monitor_cb.HLENGTH;
-
-            tr.HWDATA   = vif.slave_monitor_cb.HWDATA;
-            tr.HRDATA   = vif.slave_monitor_cb.HRDATA;
-
-            tr.HREADY   = vif.slave_monitor_cb.HREADY;
-            tr.HRESP    = vif.slave_monitor_cb.HRESP;
-
-            //---------------------------------------------
-            // Publish Transaction
-            //---------------------------------------------
-
-            analysis_port.write(tr);
-
-            //---------------------------------------------
-            // Monitor Log
-            //---------------------------------------------
-
-            `uvm_info(get_type_name(),
-                      $sformatf("SLAVE MONITOR\n%s",
-                      tr.convert2string()),
-                      UVM_MEDIUM)
 
         end
 
