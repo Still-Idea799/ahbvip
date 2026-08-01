@@ -118,9 +118,11 @@ class back_to_back_write_sequence extends master_base_sequence;
 
     virtual task body();
 
-        repeat (2) begin
+        bit [2:0] sizes[2] = '{3'b000, 3'b001};   // BYTE, then HALFWORD
 
-            req = master_transaction::type_id::create("req");
+        foreach (sizes[i]) begin
+
+            req = master_transaction::type_id::create($sformatf("req_%0d", i));
 
             start_item(req);
 
@@ -132,7 +134,7 @@ class back_to_back_write_sequence extends master_base_sequence;
 
                 HBURST  == 3'b000;     // SINGLE
 
-                HSIZE   == 3'b010;     // 32-bit
+                HSIZE   == sizes[i];
 
                 HLENGTH == 1;
 
@@ -161,9 +163,11 @@ class back_to_back_read_sequence extends master_base_sequence;
 
     virtual task body();
 
-        repeat (2) begin
+        bit [2:0] sizes[2] = '{3'b000, 3'b001};   // BYTE, then HALFWORD
 
-            req = master_transaction::type_id::create("req");
+        foreach (sizes[i]) begin
+
+            req = master_transaction::type_id::create($sformatf("req_%0d", i));
 
             start_item(req);
 
@@ -175,7 +179,7 @@ class back_to_back_read_sequence extends master_base_sequence;
 
                 HBURST  == 3'b000;     // SINGLE
 
-                HSIZE   == 3'b010;     // 32-bit
+                HSIZE   == sizes[i];
 
                 HLENGTH == 1;
 
@@ -264,7 +268,8 @@ class incr_sequence extends master_base_sequence;
 
     virtual task body();
 
-        int burst_length;
+        int        burst_length;
+        bit [31:0] base_addr;
 
         burst_length = $urandom_range(2,16);
 
@@ -274,19 +279,34 @@ class incr_sequence extends master_base_sequence;
 
             start_item(req);
 
-            assert(req.randomize() with {
+            if (i == 0) begin
 
-                HWRITE  == 1'b1;
+                assert(req.randomize() with {
 
-                HTRANS  == ((i == 0) ? 2'b10 : 2'b11);
+                    HWRITE  == 1'b1;
+                    HTRANS  == 2'b10;      // NONSEQ
+                    HBURST  == 3'b001;     // INCR
+                    HSIZE   == 3'b010;
+                    HLENGTH == burst_length;
 
-                HBURST  == 3'b001;     // INCR
+                });
 
-                HSIZE   == 3'b010;
+                base_addr = req.HADDR;
 
-                HLENGTH == burst_length;
+            end else begin
 
-            });
+                assert(req.randomize() with {
+
+                    HWRITE  == 1'b1;
+                    HTRANS  == 2'b11;      // SEQ
+                    HBURST  == 3'b001;     // INCR
+                    HSIZE   == 3'b010;
+                    HLENGTH == burst_length;
+                    HADDR   == base_addr + (i * 4);
+
+                });
+
+            end
 
             finish_item(req);
 
@@ -311,25 +331,59 @@ class incr4_sequence extends master_base_sequence;
 
     virtual task body();
 
+        bit [31:0] base_addr;
+
+        //---------------------------------------------
+        // Write Burst
+        //---------------------------------------------
+
         for(int i = 0; i < 4; i++) begin
 
-            req = master_transaction::type_id::create($sformatf("req_%0d",i));
+            req = master_transaction::type_id::create($sformatf("wr_req_%0d",i));
 
             start_item(req);
 
-            assert(req.randomize() with {
+            if (i == 0) begin
+                assert(req.randomize() with {
+                    HWRITE == 1'b1; HTRANS == 2'b10;
+                    HBURST == 3'b011; HSIZE == 3'b010; HLENGTH == 4;
+                });
+                base_addr = req.HADDR;
+            end else begin
+                assert(req.randomize() with {
+                    HWRITE == 1'b1; HTRANS == 2'b11;
+                    HBURST == 3'b011; HSIZE == 3'b010; HLENGTH == 4;
+                    HADDR == base_addr + (i * 4);
+                });
+            end
 
-                HWRITE  == 1'b1;
+            finish_item(req);
 
-                HTRANS  == ((i == 0) ? 2'b10 : 2'b11);
+        end
 
-                HBURST  == 3'b011;     // INCR4
+        //---------------------------------------------
+        // Read Burst
+        //---------------------------------------------
 
-                HSIZE   == 3'b010;
+        for(int i = 0; i < 4; i++) begin
 
-                HLENGTH == 4;
+            req = master_transaction::type_id::create($sformatf("rd_req_%0d",i));
 
-            });
+            start_item(req);
+
+            if (i == 0) begin
+                assert(req.randomize() with {
+                    HWRITE == 1'b0; HTRANS == 2'b10;
+                    HBURST == 3'b011; HSIZE == 3'b010; HLENGTH == 4;
+                });
+                base_addr = req.HADDR;
+            end else begin
+                assert(req.randomize() with {
+                    HWRITE == 1'b0; HTRANS == 2'b11;
+                    HBURST == 3'b011; HSIZE == 3'b010; HLENGTH == 4;
+                    HADDR == base_addr + (i * 4);
+                });
+            end
 
             finish_item(req);
 
@@ -354,25 +408,59 @@ class incr8_sequence extends master_base_sequence;
 
     virtual task body();
 
+        bit [31:0] base_addr;
+
+        //---------------------------------------------
+        // Write Burst
+        //---------------------------------------------
+
         for(int i = 0; i < 8; i++) begin
 
-            req = master_transaction::type_id::create($sformatf("req_%0d",i));
+            req = master_transaction::type_id::create($sformatf("wr_req_%0d",i));
 
             start_item(req);
 
-            assert(req.randomize() with {
+            if (i == 0) begin
+                assert(req.randomize() with {
+                    HWRITE == 1'b1; HTRANS == 2'b10;
+                    HBURST == 3'b101; HSIZE == 3'b010; HLENGTH == 8;
+                });
+                base_addr = req.HADDR;
+            end else begin
+                assert(req.randomize() with {
+                    HWRITE == 1'b1; HTRANS == 2'b11;
+                    HBURST == 3'b101; HSIZE == 3'b010; HLENGTH == 8;
+                    HADDR == base_addr + (i * 4);
+                });
+            end
 
-                HWRITE  == 1'b1;
+            finish_item(req);
 
-                HTRANS  == ((i == 0) ? 2'b10 : 2'b11);
+        end
 
-                HBURST  == 3'b101;     // INCR8
+        //---------------------------------------------
+        // Read Burst
+        //---------------------------------------------
 
-                HSIZE   == 3'b010;
+        for(int i = 0; i < 8; i++) begin
 
-                HLENGTH == 8;
+            req = master_transaction::type_id::create($sformatf("rd_req_%0d",i));
 
-            });
+            start_item(req);
+
+            if (i == 0) begin
+                assert(req.randomize() with {
+                    HWRITE == 1'b0; HTRANS == 2'b10;
+                    HBURST == 3'b101; HSIZE == 3'b010; HLENGTH == 8;
+                });
+                base_addr = req.HADDR;
+            end else begin
+                assert(req.randomize() with {
+                    HWRITE == 1'b0; HTRANS == 2'b11;
+                    HBURST == 3'b101; HSIZE == 3'b010; HLENGTH == 8;
+                    HADDR == base_addr + (i * 4);
+                });
+            end
 
             finish_item(req);
 
@@ -397,25 +485,59 @@ class incr16_sequence extends master_base_sequence;
 
     virtual task body();
 
+        bit [31:0] base_addr;
+
+        //---------------------------------------------
+        // Write Burst
+        //---------------------------------------------
+
         for(int i = 0; i < 16; i++) begin
 
-            req = master_transaction::type_id::create($sformatf("req_%0d",i));
+            req = master_transaction::type_id::create($sformatf("wr_req_%0d",i));
 
             start_item(req);
 
-            assert(req.randomize() with {
+            if (i == 0) begin
+                assert(req.randomize() with {
+                    HWRITE == 1'b1; HTRANS == 2'b10;
+                    HBURST == 3'b111; HSIZE == 3'b010; HLENGTH == 16;
+                });
+                base_addr = req.HADDR;
+            end else begin
+                assert(req.randomize() with {
+                    HWRITE == 1'b1; HTRANS == 2'b11;
+                    HBURST == 3'b111; HSIZE == 3'b010; HLENGTH == 16;
+                    HADDR == base_addr + (i * 4);
+                });
+            end
 
-                HWRITE  == 1'b1;
+            finish_item(req);
 
-                HTRANS  == ((i == 0) ? 2'b10 : 2'b11);
+        end
 
-                HBURST  == 3'b111;     // INCR16
+        //---------------------------------------------
+        // Read Burst
+        //---------------------------------------------
 
-                HSIZE   == 3'b010;
+        for(int i = 0; i < 16; i++) begin
 
-                HLENGTH == 16;
+            req = master_transaction::type_id::create($sformatf("rd_req_%0d",i));
 
-            });
+            start_item(req);
+
+            if (i == 0) begin
+                assert(req.randomize() with {
+                    HWRITE == 1'b0; HTRANS == 2'b10;
+                    HBURST == 3'b111; HSIZE == 3'b010; HLENGTH == 16;
+                });
+                base_addr = req.HADDR;
+            end else begin
+                assert(req.randomize() with {
+                    HWRITE == 1'b0; HTRANS == 2'b11;
+                    HBURST == 3'b111; HSIZE == 3'b010; HLENGTH == 16;
+                    HADDR == base_addr + (i * 4);
+                });
+            end
 
             finish_item(req);
 
@@ -439,25 +561,94 @@ class wrap4_sequence extends master_base_sequence;
 
     virtual task body();
 
+        bit [31:0] window_base;
+        int        start_word;   // which of the 4 word-slots beat 0 starts at
+
+        //---------------------------------------------
+        // Write Burst
+        //---------------------------------------------
+
+        start_word = $urandom_range(0,3);
+
         for(int i = 0; i < 4; i++) begin
 
-            req = master_transaction::type_id::create($sformatf("req_%0d", i));
+            req = master_transaction::type_id::create($sformatf("wr_req_%0d", i));
 
             start_item(req);
 
-            assert(req.randomize() with {
+            if (i == 0) begin
 
-                HWRITE  == 1'b1;
+                assert(req.randomize() with {
+                    HWRITE     == 1'b1;
+                    HTRANS     == 2'b10;   // NONSEQ
+                    HBURST     == 3'b010;  // WRAP4
+                    HSIZE      == 3'b010;
+                    HLENGTH    == 4;
+                    HADDR[3:2] == start_word[1:0];  // starting word slot
+                    HADDR[1:0] == 2'b00;
+                });
 
-                HTRANS  == ((i == 0) ? 2'b10 : 2'b11);   // NONSEQ then SEQ
+                window_base = {req.HADDR[31:4], 4'b0000};  // 16-byte aligned window
 
-                HBURST  == 3'b010;                     // WRAP4
+            end else begin
 
-                HSIZE   == 3'b010;
+                automatic int word_idx = (start_word + i) % 4;
 
-                HLENGTH == 4;
+                assert(req.randomize() with {
+                    HWRITE  == 1'b1;
+                    HTRANS  == 2'b11;      // SEQ
+                    HBURST  == 3'b010;
+                    HSIZE   == 3'b010;
+                    HLENGTH == 4;
+                    HADDR   == window_base + (word_idx * 4);
+                });
 
-            });
+            end
+
+            finish_item(req);
+
+        end
+
+        //---------------------------------------------
+        // Read Burst
+        //---------------------------------------------
+
+        start_word = $urandom_range(0,3);
+
+        for(int i = 0; i < 4; i++) begin
+
+            req = master_transaction::type_id::create($sformatf("rd_req_%0d", i));
+
+            start_item(req);
+
+            if (i == 0) begin
+
+                assert(req.randomize() with {
+                    HWRITE     == 1'b0;
+                    HTRANS     == 2'b10;
+                    HBURST     == 3'b010;
+                    HSIZE      == 3'b010;
+                    HLENGTH    == 4;
+                    HADDR[3:2] == start_word[1:0];
+                    HADDR[1:0] == 2'b00;
+                });
+
+                window_base = {req.HADDR[31:4], 4'b0000};
+
+            end else begin
+
+                automatic int word_idx = (start_word + i) % 4;
+
+                assert(req.randomize() with {
+                    HWRITE  == 1'b0;
+                    HTRANS  == 2'b11;
+                    HBURST  == 3'b010;
+                    HSIZE   == 3'b010;
+                    HLENGTH == 4;
+                    HADDR   == window_base + (word_idx * 4);
+                });
+
+            end
 
             finish_item(req);
 
@@ -482,25 +673,94 @@ class wrap8_sequence extends master_base_sequence;
 
     virtual task body();
 
+        bit [31:0] window_base;
+        int        start_word;   // which of the 8 word-slots beat 0 starts at
+
+        //---------------------------------------------
+        // Write Burst
+        //---------------------------------------------
+
+        start_word = $urandom_range(0,7);
+
         for(int i = 0; i < 8; i++) begin
 
-            req = master_transaction::type_id::create($sformatf("req_%0d", i));
+            req = master_transaction::type_id::create($sformatf("wr_req_%0d", i));
 
             start_item(req);
 
-            assert(req.randomize() with {
+            if (i == 0) begin
 
-                HWRITE  == 1'b1;
+                assert(req.randomize() with {
+                    HWRITE     == 1'b1;
+                    HTRANS     == 2'b10;
+                    HBURST     == 3'b100;  // WRAP8
+                    HSIZE      == 3'b010;
+                    HLENGTH    == 8;
+                    HADDR[4:2] == start_word[2:0];
+                    HADDR[1:0] == 2'b00;
+                });
 
-                HTRANS  == ((i == 0) ? 2'b10 : 2'b11);
+                window_base = {req.HADDR[31:5], 5'b00000};  // 32-byte aligned window
 
-                HBURST  == 3'b100;                     // WRAP8
+            end else begin
 
-                HSIZE   == 3'b010;
+                automatic int word_idx = (start_word + i) % 8;
 
-                HLENGTH == 8;
+                assert(req.randomize() with {
+                    HWRITE  == 1'b1;
+                    HTRANS  == 2'b11;
+                    HBURST  == 3'b100;
+                    HSIZE   == 3'b010;
+                    HLENGTH == 8;
+                    HADDR   == window_base + (word_idx * 4);
+                });
 
-            });
+            end
+
+            finish_item(req);
+
+        end
+
+        //---------------------------------------------
+        // Read Burst
+        //---------------------------------------------
+
+        start_word = $urandom_range(0,7);
+
+        for(int i = 0; i < 8; i++) begin
+
+            req = master_transaction::type_id::create($sformatf("rd_req_%0d", i));
+
+            start_item(req);
+
+            if (i == 0) begin
+
+                assert(req.randomize() with {
+                    HWRITE     == 1'b0;
+                    HTRANS     == 2'b10;
+                    HBURST     == 3'b100;
+                    HSIZE      == 3'b010;
+                    HLENGTH    == 8;
+                    HADDR[4:2] == start_word[2:0];
+                    HADDR[1:0] == 2'b00;
+                });
+
+                window_base = {req.HADDR[31:5], 5'b00000};
+
+            end else begin
+
+                automatic int word_idx = (start_word + i) % 8;
+
+                assert(req.randomize() with {
+                    HWRITE  == 1'b0;
+                    HTRANS  == 2'b11;
+                    HBURST  == 3'b100;
+                    HSIZE   == 3'b010;
+                    HLENGTH == 8;
+                    HADDR   == window_base + (word_idx * 4);
+                });
+
+            end
 
             finish_item(req);
 
@@ -525,25 +785,94 @@ class wrap16_sequence extends master_base_sequence;
 
     virtual task body();
 
+        bit [31:0] window_base;
+        int        start_word;   // which of the 16 word-slots beat 0 starts at
+
+        //---------------------------------------------
+        // Write Burst
+        //---------------------------------------------
+
+        start_word = $urandom_range(0,15);
+
         for(int i = 0; i < 16; i++) begin
 
-            req = master_transaction::type_id::create($sformatf("req_%0d", i));
+            req = master_transaction::type_id::create($sformatf("wr_req_%0d", i));
 
             start_item(req);
 
-            assert(req.randomize() with {
+            if (i == 0) begin
 
-                HWRITE  == 1'b1;
+                assert(req.randomize() with {
+                    HWRITE     == 1'b1;
+                    HTRANS     == 2'b10;
+                    HBURST     == 3'b110;  // WRAP16
+                    HSIZE      == 3'b010;
+                    HLENGTH    == 16;
+                    HADDR[5:2] == start_word[3:0];
+                    HADDR[1:0] == 2'b00;
+                });
 
-                HTRANS  == ((i == 0) ? 2'b10 : 2'b11);
+                window_base = {req.HADDR[31:6], 6'b000000};  // 64-byte aligned window
 
-                HBURST  == 3'b110;                     // WRAP16
+            end else begin
 
-                HSIZE   == 3'b010;
+                automatic int word_idx = (start_word + i) % 16;
 
-                HLENGTH == 16;
+                assert(req.randomize() with {
+                    HWRITE  == 1'b1;
+                    HTRANS  == 2'b11;
+                    HBURST  == 3'b110;
+                    HSIZE   == 3'b010;
+                    HLENGTH == 16;
+                    HADDR   == window_base + (word_idx * 4);
+                });
 
-            });
+            end
+
+            finish_item(req);
+
+        end
+
+        //---------------------------------------------
+        // Read Burst
+        //---------------------------------------------
+
+        start_word = $urandom_range(0,15);
+
+        for(int i = 0; i < 16; i++) begin
+
+            req = master_transaction::type_id::create($sformatf("rd_req_%0d", i));
+
+            start_item(req);
+
+            if (i == 0) begin
+
+                assert(req.randomize() with {
+                    HWRITE     == 1'b0;
+                    HTRANS     == 2'b10;
+                    HBURST     == 3'b110;
+                    HSIZE      == 3'b010;
+                    HLENGTH    == 16;
+                    HADDR[5:2] == start_word[3:0];
+                    HADDR[1:0] == 2'b00;
+                });
+
+                window_base = {req.HADDR[31:6], 6'b000000};
+
+            end else begin
+
+                automatic int word_idx = (start_word + i) % 16;
+
+                assert(req.randomize() with {
+                    HWRITE  == 1'b0;
+                    HTRANS  == 2'b11;
+                    HBURST  == 3'b110;
+                    HSIZE   == 3'b010;
+                    HLENGTH == 16;
+                    HADDR   == window_base + (word_idx * 4);
+                });
+
+            end
 
             finish_item(req);
 
@@ -608,6 +937,8 @@ class busy_transfer_sequence extends master_base_sequence;
 
     virtual task body();
 
+        bit [31:0] base_addr;
+
         // First Transfer (NONSEQ)
         req = master_transaction::type_id::create("req_nonseq");
 
@@ -628,6 +959,8 @@ class busy_transfer_sequence extends master_base_sequence;
         });
 
         finish_item(req);
+
+        base_addr = req.HADDR;
 
 
         // BUSY Cycle
@@ -660,6 +993,8 @@ class busy_transfer_sequence extends master_base_sequence;
             HSIZE   == 3'b010;
 
             HLENGTH == 3;
+
+            HADDR   == base_addr + 4;
 
         });
 
@@ -760,7 +1095,8 @@ class error_response_sequence extends master_base_sequence;
 
     virtual task body();
 
-        req = master_transaction::type_id::create("req");
+        // Write that receives ERROR
+        req = master_transaction::type_id::create("req_write");
 
         start_item(req);
 
@@ -781,6 +1117,27 @@ class error_response_sequence extends master_base_sequence;
             // response is generated by slave_error_response_sequence
             // on the slave agent (see error_response_test in
             // test_pkg.sv), which runs concurrently with this sequence.
+
+        });
+
+        finish_item(req);
+
+        // Read that receives ERROR
+        req = master_transaction::type_id::create("req_read");
+
+        start_item(req);
+
+        assert(req.randomize() with {
+
+            HWRITE  == 1'b0;
+
+            HTRANS  == 2'b10;
+
+            HBURST  == 3'b000;
+
+            HSIZE   == 3'b010;
+
+            HLENGTH == 1;
 
         });
 

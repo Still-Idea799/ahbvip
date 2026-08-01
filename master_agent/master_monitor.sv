@@ -70,6 +70,17 @@ class master_monitor extends uvm_monitor;
             @(vif.master_monitor_cb);
 
             //---------------------------------------------
+            // Ignore anything sampled before/during reset -
+            // interface signals are X at this point, and
+            // assigning X into 2-state latch variables below
+            // silently coerces to 0, producing a phantom
+            // all-zero "transaction" that isn't real.
+            //---------------------------------------------
+
+            if(!vif.HRESETn)
+                continue;
+
+            //---------------------------------------------
             // Ignore IDLE Transfers
             //---------------------------------------------
 

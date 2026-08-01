@@ -120,7 +120,18 @@ class ahb_coverage extends uvm_subscriber #(master_transaction);
 
         cross_resp_rw   : cross cp_hresp, cp_hwrite;
 
-        cross_trans_rsp : cross cp_htrans, cp_hresp;
+        cross_trans_rsp : cross cp_htrans, cp_hresp {
+
+            // IDLE/BUSY cycles don't carry a meaningful "response" -
+            // HRESP only has real significance for the data phase of
+            // a completed NONSEQ/SEQ transfer. Forcing these bins would
+            // mean artificially pairing an ERROR response with a cycle
+            // that isn't actually being responded to.
+            ignore_bins non_meaningful =
+                binsof(cp_htrans) intersect {2'b00, 2'b01} &&
+                binsof(cp_hresp)  intersect {2'b01};
+
+        }
 
     endgroup
 

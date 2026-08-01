@@ -110,18 +110,22 @@ class slave_error_response_sequence extends slave_base_sequence;
 
     virtual task body();
 
-        req = slave_transaction::type_id::create("req");
+        repeat (2) begin
 
-        start_item(req);
+            req = slave_transaction::type_id::create("req");
 
-        assert(req.randomize() with {
+            start_item(req);
 
-            HREADY == 1'b1;
-            HRESP  == 2'b01;
+            assert(req.randomize() with {
 
-        });
+                HREADY == 1'b1;
+                HRESP  == 2'b01;
 
-        finish_item(req);
+            });
+
+            finish_item(req);
+
+        end
 
     endtask
 

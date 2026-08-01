@@ -38,6 +38,7 @@ package test_pkg;
             slave_default_sequence s_seq;
             
             phase.raise_objection(this);
+            phase.phase_done.set_drain_time(this, 20ns);
             
             m_seq = single_write_sequence::type_id::create("m_seq");
             s_seq = slave_default_sequence::type_id::create("s_seq");
@@ -65,6 +66,7 @@ package test_pkg;
             slave_default_sequence s_seq;
             
             phase.raise_objection(this);
+            phase.phase_done.set_drain_time(this, 20ns);
             
             m_seq = single_read_sequence::type_id::create("m_seq");
             s_seq = slave_default_sequence::type_id::create("s_seq");
@@ -92,6 +94,7 @@ package test_pkg;
             slave_default_sequence      s_seq;
             
             phase.raise_objection(this);
+            phase.phase_done.set_drain_time(this, 20ns);
             
             m_seq = back_to_back_write_sequence::type_id::create("m_seq");
             s_seq = slave_default_sequence::type_id::create("s_seq");
@@ -119,6 +122,7 @@ package test_pkg;
             slave_default_sequence     s_seq;
             
             phase.raise_objection(this);
+            phase.phase_done.set_drain_time(this, 20ns);
             
             m_seq = back_to_back_read_sequence::type_id::create("m_seq");
             s_seq = slave_default_sequence::type_id::create("s_seq");
@@ -146,6 +150,7 @@ package test_pkg;
             slave_default_sequence    s_seq;
             
             phase.raise_objection(this);
+            phase.phase_done.set_drain_time(this, 20ns);
             
             m_seq = mixed_read_write_sequence::type_id::create("m_seq");
             s_seq = slave_default_sequence::type_id::create("s_seq");
@@ -173,6 +178,7 @@ package test_pkg;
             slave_default_sequence s_seq;
             
             phase.raise_objection(this);
+            phase.phase_done.set_drain_time(this, 20ns);
             
             m_seq = incr_sequence::type_id::create("m_seq");
             s_seq = slave_default_sequence::type_id::create("s_seq");
@@ -200,6 +206,7 @@ package test_pkg;
             slave_default_sequence s_seq;
             
             phase.raise_objection(this);
+            phase.phase_done.set_drain_time(this, 20ns);
             
             m_seq = incr4_sequence::type_id::create("m_seq");
             s_seq = slave_default_sequence::type_id::create("s_seq");
@@ -227,6 +234,7 @@ package test_pkg;
             slave_default_sequence s_seq;
             
             phase.raise_objection(this);
+            phase.phase_done.set_drain_time(this, 20ns);
             
             m_seq = incr8_sequence::type_id::create("m_seq");
             s_seq = slave_default_sequence::type_id::create("s_seq");
@@ -254,6 +262,7 @@ package test_pkg;
             slave_default_sequence s_seq;
             
             phase.raise_objection(this);
+            phase.phase_done.set_drain_time(this, 20ns);
             
             m_seq = incr16_sequence::type_id::create("m_seq");
             s_seq = slave_default_sequence::type_id::create("s_seq");
@@ -281,6 +290,7 @@ package test_pkg;
             slave_default_sequence s_seq;
             
             phase.raise_objection(this);
+            phase.phase_done.set_drain_time(this, 20ns);
             
             m_seq = wrap4_sequence::type_id::create("m_seq");
             s_seq = slave_default_sequence::type_id::create("s_seq");
@@ -308,6 +318,7 @@ package test_pkg;
             slave_default_sequence s_seq;
             
             phase.raise_objection(this);
+            phase.phase_done.set_drain_time(this, 20ns);
             
             m_seq = wrap8_sequence::type_id::create("m_seq");
             s_seq = slave_default_sequence::type_id::create("s_seq");
@@ -335,6 +346,7 @@ package test_pkg;
             slave_default_sequence s_seq;
             
             phase.raise_objection(this);
+            phase.phase_done.set_drain_time(this, 20ns);
             
             m_seq = wrap16_sequence::type_id::create("m_seq");
             s_seq = slave_default_sequence::type_id::create("s_seq");
@@ -362,6 +374,7 @@ package test_pkg;
             slave_default_sequence   s_seq;
             
             phase.raise_objection(this);
+            phase.phase_done.set_drain_time(this, 20ns);
             
             m_seq = invalid_address_sequence::type_id::create("m_seq");
             s_seq = slave_default_sequence::type_id::create("s_seq");
@@ -389,6 +402,7 @@ package test_pkg;
             slave_default_sequence s_seq;
             
             phase.raise_objection(this);
+            phase.phase_done.set_drain_time(this, 20ns);
             
             m_seq = busy_transfer_sequence::type_id::create("m_seq");
             s_seq = slave_default_sequence::type_id::create("s_seq");
@@ -416,6 +430,7 @@ package test_pkg;
             slave_default_sequence s_seq;
             
             phase.raise_objection(this);
+            phase.phase_done.set_drain_time(this, 20ns);
             
             m_seq = idle_transfer_sequence::type_id::create("m_seq");
             s_seq = slave_default_sequence::type_id::create("s_seq");
@@ -443,6 +458,7 @@ package test_pkg;
             slave_wait_state_sequence s_seq; // Slave correctly drives wait states here
             
             phase.raise_objection(this);
+            phase.phase_done.set_drain_time(this, 20ns);
             
             m_seq = wait_state_sequence::type_id::create("m_seq");
             s_seq = slave_wait_state_sequence::type_id::create("s_seq");
@@ -470,6 +486,7 @@ package test_pkg;
             slave_error_response_sequence s_seq; // Slave correctly drives error response here
             
             phase.raise_objection(this);
+            phase.phase_done.set_drain_time(this, 20ns);
             
             m_seq = error_response_sequence::type_id::create("m_seq");
             s_seq = slave_error_response_sequence::type_id::create("s_seq");
@@ -497,6 +514,7 @@ package test_pkg;
             slave_random_sequence       s_seq; // Slave responds randomly
             
             phase.raise_objection(this);
+            phase.phase_done.set_drain_time(this, 20ns);
             
             m_seq = random_constrained_sequence::type_id::create("m_seq");
             s_seq = slave_random_sequence::type_id::create("s_seq");

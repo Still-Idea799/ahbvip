@@ -70,6 +70,14 @@ class slave_monitor extends uvm_monitor;
             @(vif.slave_monitor_cb);
 
             //---------------------------------------------
+            // Ignore anything sampled before/during reset -
+            // see master_monitor.sv for the full explanation.
+            //---------------------------------------------
+
+            if(!vif.HRESETn)
+                continue;
+
+            //---------------------------------------------
             // Ignore IDLE Transfers
             //---------------------------------------------
 
