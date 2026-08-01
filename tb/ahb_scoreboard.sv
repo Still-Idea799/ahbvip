@@ -275,24 +275,9 @@ class ahb_scoreboard extends uvm_scoreboard;
     // Report Phase
     //=========================================================
 
-    virtual function void report_phase(uvm_phase phase);
-
+virtual function void report_phase(uvm_phase phase);
         super.report_phase(phase);
-
-        `uvm_info(get_type_name(),
-                  $sformatf("\n\
-=========================================\n\
-AHB SCOREBOARD SUMMARY\n\
-=========================================\n\
-Total Transactions  : %0d\n\
-Passed Transactions : %0d\n\
-Failed Transactions : %0d\n\
-=========================================",
-                  total_transactions,
-                  passed_transactions,
-                  failed_transactions),
-                  UVM_NONE)
-
+        `uvm_info(get_type_name(), $sformatf("\n=========================================\nAHB SCOREBOARD SUMMARY\n=========================================\nTotal Transactions  : %0d\nPassed Transactions : %0d\nFailed Transactions : %0d\n=========================================", total_transactions, passed_transactions, failed_transactions), UVM_NONE)
     endfunction
 
 endclass
