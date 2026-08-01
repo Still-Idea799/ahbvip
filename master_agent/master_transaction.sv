@@ -81,34 +81,8 @@ class master_transaction extends uvm_sequence_item;
     //=========================================================
     // Convert Transaction to String
     //=========================================================
-
-    function string convert2string();
-
-        return $sformatf(
-            "\n----------------------------------------\n\
-             HADDR   = 0x%08h\n\
-             HWDATA  = 0x%08h\n\
-             HRDATA  = 0x%08h\n\
-             HWRITE  = %0b\n\
-             HTRANS  = %0d\n\
-             HSIZE   = %0d\n\
-             HBURST  = %0d\n\
-             HLENGTH = %0d\n\
-             HREADY  = %0b\n\
-             HRESP   = %0d\n\
-             ----------------------------------------",
-             HADDR,
-             HWDATA,
-             HRDATA,
-             HWRITE,
-             HTRANS,
-             HSIZE,
-             HBURST,
-             HLENGTH,
-             HREADY,
-             HRESP
-        );
-
+function string convert2string();
+        return $sformatf("\n----------------------------------------\n HADDR   = 0x%08h\n HWDATA  = 0x%08h\n HRDATA  = 0x%08h\n HWRITE  = %0b\n HTRANS  = %0d\n HSIZE   = %0d\n HBURST  = %0d\n HLENGTH = %0d\n HREADY  = %0b\n HRESP   = %0d\n----------------------------------------", HADDR, HWDATA, HRDATA, HWRITE, HTRANS, HSIZE, HBURST, HLENGTH, HREADY, HRESP);
     endfunction
 
 endclass
