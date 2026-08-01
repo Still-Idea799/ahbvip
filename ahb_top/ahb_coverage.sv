@@ -153,20 +153,9 @@ class ahb_coverage extends uvm_subscriber #(master_transaction);
     // Report Phase
     //=========================================================
 
-    virtual function void report_phase(uvm_phase phase);
-
+virtual function void report_phase(uvm_phase phase);
         super.report_phase(phase);
-
-        `uvm_info(get_type_name(),
-                  $sformatf("\n\
-=========================================\n\
-AHB FUNCTIONAL COVERAGE\n\
-=========================================\n\
-Coverage = %0.2f %%\n\
-=========================================",
-                  ahb_cg.get_coverage()),
-                  UVM_NONE)
-
+        `uvm_info(get_type_name(), $sformatf("\n=========================================\nAHB FUNCTIONAL COVERAGE\n=========================================\nCoverage = %0.2f %%\n=========================================", ahb_cg.get_coverage()), UVM_NONE)
     endfunction
 
 endclass
